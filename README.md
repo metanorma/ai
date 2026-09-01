@@ -49,3 +49,5 @@ persists into every future answer).
 v0.1 — documentation and contracts complete; code extraction is by
 reference to the production implementation (see `MAPPING.md`). The
 reference deployment is live and measured; this repo makes it yours.
+
+License: BSD 3-Clause (see LICENSE).
