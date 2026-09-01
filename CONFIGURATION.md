@@ -30,3 +30,11 @@
   decides; the same rules serve every language).
 - The refusal contract: one canonical sentence, never cached.
 - Verification before caching, always.
+
+## Packaging namespaces (the ecosystem)
+
+- Ruby gem: `metanorma-mko` (RubyGems) — the MN 116 contract
+  implementation, per metanorma/metanorma-document#54.
+- npm: `@metanorma/mko` and `@metanorma/mko-schema` — the org namespace on
+  npm is `metanorma`; generated TS consumer types ride the schema package.
+- Consumers pin either surface; the JSON Schema is the single source.
