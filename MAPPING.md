@@ -1,6 +1,9 @@
 # Reference-implementation file map
 
-The production reference is `oimlsmart/rag` (private). This map says which
+The production reference is `oimlsmart/rag` (private). The MN 116
+contract itself is proposed to live in `metanorma/mko`
+(metanorma/metanorma-document#54) — this package will link it as THE
+contract reference once extracted. This map says which
 parts are the GENERIC system (extract these for a shared package) versus
 OIML/estate-specific (every deployer reimplements or omits).
 
