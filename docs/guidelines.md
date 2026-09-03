@@ -81,7 +81,7 @@ metanorma compile document.adoc -x mko    # (or the Ruby exporter today)
 
 **Cost:** $0 (local compute). **Measurement:** unit counts per document
 against a hand-check; zero empty chunks for preface-only documents
-(a real producer bug we hit).
+.
 
 ## Stage 2 — Contextual enrichment (the highest-ROI one-time spend)
 
@@ -114,7 +114,7 @@ Fuse with reciprocal rank fusion (RRF, k=60). Then a cross-encoder
 reranks the fused candidates; optionally a stronger listwise pass for
 complex questions.
 
-**The lesson that cost us a baseline:** lexical retrieval must scan the
+*Full-corpus is the point:* lexical retrieval must scan the
 *whole corpus* as a first stage. Re-scoring only what dense already
 found cannot recover what dense missed. On our corpus this single
 change lifted recall@5 from 86% to 95%.
@@ -224,7 +224,73 @@ assistant:
    model describes each from pixels (one-time, ≈cents per figure);
    store the description so text-only tiers can explain figures too.
 
-## Stage 9 — Operations
+## Stage 9 — Structural retrieval over the clause tree
+
+Metanorma documents ARE trees; use the tree at serving time:
+
+1. **Score propagation** — a hit's score blends its ancestors' and
+   descendants': a section whose clauses are collectively relevant
+   rises; a hot section lifts its clauses. Spread-scaled so the
+   cross-encoder's own signal always dominates.
+2. **Reading-order presentation** — evidence is fed to the answer model
+   in document order per publication (publications by best rank).
+   Synthesis quality depends on arrangement, not just set membership.
+3. **Same-chain dedup** — near-duplicate parent/child chunks collapse
+   to the stronger one before the window is cut.
+4. **Section-summary units** — index depth-1 clause summaries as
+   retrievable objects; a summary that ranks descends to its quotable
+   child clauses and retires itself (citations always quote source
+   text). The tree is producer-native, so none of this needs an LLM
+   tree-builder — the one-time cost is the summaries alone.
+
+*Without this step:* flat chunk retrieval has no notion of "the section
+around this clause" and presents evidence in similarity order.
+
+## Stage 10 — Vocabulary binding (the nomenclature bridge)
+
+Everyday words rarely match defined terms ("my output keeps drifting"
+↛ "span stability"). Build a concept index from the corpus's
+terminology (term + definition + defining publication, one vector per
+concept per language) and:
+
+1. Dense-match the question to candidate concepts (cosine floor).
+2. Cross-encoder rerank the candidates; keep the positively-relevant,
+   DISTINCT terms (the same concept is often defined by several
+   publications).
+3. Inject the top candidates as a vocabulary note; the ANSWER model
+   adjudicates and leads with the corpus's own term.
+
+Retrieval proposes, generation disambiguates — top-1 dense binding
+alone picks the wrong term (colloquial phrasings sit closer to a
+different, related term). *Without this step:* the everyday-words →
+defined-term bridge is the single largest measured gap, and it fails
+for every representation equally.
+
+## Stage 11 — Execution: verdicts, absence, verification
+
+When the corpus carries machine-checkable objects (constraints,
+limits, calculations), execute them:
+
+1. **Verdicts** — bind the question's stated values to the rule's own
+   parameters (grounded to the rule's closed symbol set), evaluate
+   deterministically (a small safe expression parser — never eval),
+   attach the verdict as a server-built block: pass / the standard's
+   own violation word / void naming exactly what is missing. The model
+   narrates computed data; it cannot soften or contradict it.
+   Counterfactuals are free — hypothetical values are just values.
+2. **Provable absence** — enumerate the standard's whole model plane
+   for a topic; zero matches returns a certificate ("N nodes
+   enumerated, 0 matches, scope named"). A refusal asserts a search; a
+   certificate asserts an enumeration.
+3. **Answer verification** — expose the contract battery: verbatim-quote
+   containment in retrieved passages, object-reference resolution,
+   plus a judged faithfulness score, labeled by kind. Any answer —
+   yours or another system's — can be checked.
+
+*Without this step:* conformance questions are quotes about rules, and
+absence questions are shrugs.
+
+## Stage 12 — Operations
 
 - **Incremental re-ingest:** diff bundles by (document, unit_id) +
   content hash; a wording change re-processes only the affected chunks.
@@ -257,7 +323,7 @@ assistant:
 | Ingest | Python (pydantic models) | MKO → chunks → enrich → embed → upsert |
 | Eval | Node (golden, paraphrase, e2e, RAGAS-style) | CI-gated |
 
-## What not to do (each one cost us a measurement)
+## Failure modes to design out
 
 - Don't scrape rendered HTML when the document model exists.
 - Don't let the model re-type tables; it will, and the values will be
