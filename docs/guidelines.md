@@ -65,7 +65,8 @@ requirements), a section graph (part_of, cites, defines edges), a
 native glossary, and native bibliographic objects.
 
 ```
-metanorma compile document.adoc -x mko    # (or the Ruby exporter today)
+# via the metanorma-mko gem (1.0.0) — the MN 116 format contract:
+metanorma-mko export / export via the metanorma-document collection walk
 ```
 
 **Key decisions:**
